@@ -19,7 +19,7 @@ RUN pip install --no-cache-dir torch torchvision --index-url https://download.py
 
 # Pre-download MiniFASNet liveness models so they are baked into the image
 RUN mkdir -p /app/silent_face_models && \
-    wget -q -O /app/silent_face_models/2.7_80x80_MiniFASNetV2.pth \
+    curl -fsSL -o /app/silent_face_models/2.7_80x80_MiniFASNetV2.pth \
       "https://github.com/minivision-ai/Silent-Face-Anti-Spoofing/raw/master/resources/anti_spoof_models/2.7_80x80_MiniFASNetV2.pth" && \
-    wget -q -O /app/silent_face_models/4_0_0_80x80_MiniFASNetV1SE.pth \
+    curl -fsSL -o /app/silent_face_models/4_0_0_80x80_MiniFASNetV1SE.pth \
       "https://github.com/minivision-ai/Silent-Face-Anti-Spoofing/raw/master/resources/anti_spoof_models/4_0_0_80x80_MiniFASNetV1SE.pth"
