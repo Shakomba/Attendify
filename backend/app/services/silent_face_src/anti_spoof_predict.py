@@ -52,8 +52,9 @@ class AntiSpoofPredict:
         Index 1 = real face probability.
         """
         # Models were trained on BGR images (OpenCV convention) — do NOT convert to RGB.
-        img_float = img.astype(np.float32) / 255.0
-        tensor = torch.from_numpy(img_float.transpose(2, 0, 1)).unsqueeze(0).to(self.device)
+        # The original data_io/functional.py to_tensor() does NOT divide by 255
+        # (the /255 was explicitly removed in the repo). Pass raw float pixel values.
+        tensor = torch.from_numpy(img.transpose(2, 0, 1).astype(np.float32)).unsqueeze(0).to(self.device)
 
         model = self._load_model(model_path)
         model.eval()
