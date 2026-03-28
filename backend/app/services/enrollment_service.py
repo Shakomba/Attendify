@@ -26,8 +26,8 @@ POSE_INSTRUCTIONS: Dict[str, str] = {
 # Minimum absolute angle (degrees) required to confirm head has actually moved.
 # Uses magnitude only — no assumed sign convention for left/right.
 # A flat photo reports ~0° on all axes regardless of how it's angled at the camera.
-_POSE_MIN_YAW: float = 10.0   # left / right poses must have |yaw|  >= this
-_POSE_MIN_PITCH: float = 8.0  # up   / down  poses must have |pitch| >= this
+_POSE_MIN_YAW: float = 15.0   # left / right poses must have |yaw|  >= this
+_POSE_MIN_PITCH: float = 13.0 # up   / down  poses must have |pitch| >= this
 _POSE_MAX_FRONT: float = 22.0 # front pose must have |yaw| AND |pitch| <= this
 
 
@@ -205,32 +205,32 @@ class EnrollmentService:
                 "total_poses": len(POSES),
             }
 
-        # Hold satisfied — check this pose is sufficiently different from the PREVIOUS one.
-        # We compare against the immediately preceding pose (not the global max across all pairs)
-        # so each transition requires a fresh head movement.
-        if state.captured_poses:
-            prev_label = POSES[state.current_pose_index - 1]
-            prev_embedding = state.captured_poses.get(prev_label)
-            if prev_embedding is not None:
-                if self.face_engine.mode == "cpu":
-                    dist = float(np.linalg.norm(embedding - prev_embedding))
-                else:
-                    n1 = embedding / (np.linalg.norm(embedding) + 1e-9)
-                    n2 = prev_embedding / (np.linalg.norm(prev_embedding) + 1e-9)
-                    dist = 1.0 - float(np.dot(n1, n2))
-                threshold = settings.enrollment_pose_distance_threshold
-                if dist < threshold:
-                    state.pose_consecutive_valid = 0
-                    return {
-                        "type": "pose_rejected",
-                        "pose": current_pose,
-                        "reason": (
-                            f"Move your head more — distance {dist:.3f} "
-                            f"(need ≥ {threshold:.3f} from previous pose)."
-                        ),
-                        "progress": state.progress,
-                        "total_poses": len(POSES),
-                    }
+        # Hold satisfied — check this pose is sufficiently different from FRONT (neutral).
+        # Comparing against "front" ensures every non-front pose independently requires
+        # a genuine head movement from the neutral position.  Comparing against the
+        # previous pose (e.g. right→up) can be satisfied by merely drifting back toward
+        # center, which doesn't validate the correct movement at all.
+        if current_pose != "front" and "front" in state.captured_poses:
+            front_embedding = state.captured_poses["front"]
+            if self.face_engine.mode == "cpu":
+                dist = float(np.linalg.norm(embedding - front_embedding))
+            else:
+                n1 = embedding / (np.linalg.norm(embedding) + 1e-9)
+                n2 = front_embedding / (np.linalg.norm(front_embedding) + 1e-9)
+                dist = 1.0 - float(np.dot(n1, n2))
+            threshold = settings.enrollment_pose_distance_threshold
+            if dist < threshold:
+                state.pose_consecutive_valid = 0
+                return {
+                    "type": "pose_rejected",
+                    "pose": current_pose,
+                    "reason": (
+                        f"Move your head more — distance from neutral {dist:.3f} "
+                        f"(need ≥ {threshold:.3f})."
+                    ),
+                    "progress": state.progress,
+                    "total_poses": len(POSES),
+                }
 
         # Accept this pose — reset hold counter for the next pose.
         state.pose_consecutive_valid = 0
