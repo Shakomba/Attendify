@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🎓 Attendify (Attendance Management System)
+# Attendify (Attendance Management System)
 
 A state-of-the-art, AI-powered system for automated classroom attendance. Utilizing high-speed facial recognition and military-grade spoof detection to eliminate manual roll calls and ensure academic integrity.
 
@@ -14,18 +14,18 @@ A state-of-the-art, AI-powered system for automated classroom attendance. Utiliz
 
 <br />
 
-## 🌟 Key Features
+## Key Features
 
-- **⚡ Blazing Fast AI Face Recognition**: Automatically detects and matches students against their 5-angle biometric profiles in real-time. Supports CPU inference (via `dlib`/`face_recognition`) or GPU inference (via `InsightFace`).
-- **🛡️ Passive Liveness Anti-Spoofing**: Defeats replay attacks, photos, and deepfakes using a temporal `MiniFASNet` ONNX ensemble.
-- **📊 Comprehensive Dashboard & Gradebook**: Real-time tracking of lectures, auto-calculated absence tallies, gradebook integration, and identifying at-risk students.
-- **📧 Automated Reporting**: Bulk dispatch HTML absence warnings and grade reports directly to students with predefined thresholds.
-- **🌍 Full RTL & Multi-Language Support**: Fully localized in English and Central Kurdish (Sorani).
-- **🔒 Passkey Biometric Login**: Professors can log in securely via WebAuthn, no password required.
+- **Blazing Fast AI Face Recognition**: Automatically detects and matches students against their 5-angle biometric profiles in real-time. Supports CPU inference (via `dlib`/`face_recognition`) or GPU inference (via `InsightFace`).
+- **Passive Liveness Anti-Spoofing**: Defeats replay attacks, photos, and deepfakes using a temporal `MiniFASNet` ONNX ensemble.
+- **Comprehensive Dashboard & Gradebook**: Real-time tracking of lectures, auto-calculated absence tallies, gradebook integration, and identifying at-risk students.
+- **Automated Reporting**: Bulk dispatch HTML absence warnings and grade reports directly to students with predefined thresholds.
+- **Full RTL & Multi-Language Support**: Fully localized in English and Central Kurdish (Sorani).
+- **Passkey Biometric Login**: Professors can log in securely via WebAuthn, no password required.
 
 ---
 
-## 🏗️ Architecture Stack
+## Architecture Stack
 
 ### Backend (`/backend`)
 - **Framework**: `FastAPI` + `uvicorn` (Python 3.11)
@@ -42,7 +42,7 @@ A state-of-the-art, AI-powered system for automated classroom attendance. Utiliz
 
 ---
 
-## 📂 Repository Structure
+## Repository Structure
 
 ```text
 ├── backend/                  # FastAPI app (app/), requirements, local runner
@@ -59,7 +59,7 @@ A state-of-the-art, AI-powered system for automated classroom attendance. Utiliz
 
 ---
 
-## 🚀 Local Development
+## Local Development
 
 ### Prerequisites
 - Node.js & npm (v18+)
@@ -92,7 +92,7 @@ npm run dev                         # Serves app on http://localhost:5173
 
 ---
 
-## 🔐 Production Deployment (VPS)
+## Production Deployment (VPS)
 
 Attendify is tailored for deployment on isolated GPU droplets (e.g., DigitalOcean RTX 6000 Ada).
 
