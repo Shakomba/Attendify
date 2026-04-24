@@ -1,111 +1,123 @@
-# Attendance Management System
+<div align="center">
 
-AI face-recognition attendance for classrooms. Professors start a session, the
-camera streams video to the backend, and students are automatically marked
-present via face recognition with passive anti-spoofing (CNN PAD).
+# 🎓 Attendify (Attendance Management System)
 
-- Backend: FastAPI + SQL Server, CPU (dlib) or GPU (InsightFace)
-- Frontend: React 18 + Vite + Tailwind
-- Anti-spoofing: MiniFASNet ONNX ensemble with temporal aggregation
+A state-of-the-art, AI-powered system for automated classroom attendance. Utilizing high-speed facial recognition and military-grade spoof detection to eliminate manual roll calls and ensure academic integrity.
 
-See [CLAUDE.md](CLAUDE.md) for a deeper architecture walkthrough.
+[![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![Docker](https://img.shields.io/badge/Docker-2CA5E0?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
+[![SQL Server](https://img.shields.io/badge/SQL_Server-CC292B?style=for-the-badge&logo=microsoft-sql-server&logoColor=white)](https://www.microsoft.com/en-us/sql-server)
 
----
+</div>
 
-## Repo layout
+<br />
 
-```
-backend/           FastAPI app (app/), requirements, local runner
-frontend/          React + Vite SPA
-database/          SQL Server schema + stored procedures
-docker/            Dockerfiles (backend-base, backend-gpu)
-nginx/             nginx.conf (prod), local.conf (local dev)
-scripts/           convert_pad_models.py (one-time PAD setup)
-docker-compose.yml         Production stack (GPU backend + SQL + nginx + certbot)
-docker-compose.local.yml   Local dev overrides (CPU backend, no SSL)
-deploy.sh                  Sync + build + start on a VPS (see below)
-ssl-init.sh                One-time Let's Encrypt cert setup
-CLAUDE.md                  Detailed architecture / config notes
-```
+## 🌟 Key Features
+
+- **⚡ Blazing Fast AI Face Recognition**: Automatically detects and matches students against their 5-angle biometric profiles in real-time. Supports CPU inference (via `dlib`/`face_recognition`) or GPU inference (via `InsightFace`).
+- **🛡️ Passive Liveness Anti-Spoofing**: Defeats replay attacks, photos, and deepfakes using a temporal `MiniFASNet` ONNX ensemble.
+- **📊 Comprehensive Dashboard & Gradebook**: Real-time tracking of lectures, auto-calculated absence tallies, gradebook integration, and identifying at-risk students.
+- **📧 Automated Reporting**: Bulk dispatch HTML absence warnings and grade reports directly to students with predefined thresholds.
+- **🌍 Full RTL & Multi-Language Support**: Fully localized in English and Central Kurdish (Sorani).
+- **🔒 Passkey Biometric Login**: Professors can log in securely via WebAuthn, no password required.
 
 ---
 
-## Local development
+## 🏗️ Architecture Stack
 
+### Backend (`/backend`)
+- **Framework**: `FastAPI` + `uvicorn` (Python 3.11)
+- **Database**: `SQL Server 2022` with stored procedures via `pyodbc`
+- **Biometrics (GPU Mode)**: `InsightFace` (detection & embeddings) + `ONNXRuntime-GPU`
+- **Biometrics (CPU Mode)**: `dlib` & `face_recognition`
+- **Anti-Spoofing**: Temporal Sliding-Window `MiniFASNetV1SE` and `MiniFASNetV2`
+
+### Frontend (`/frontend`)
+- **Framework**: `React 18` + `Vite`
+- **Styling**: `Tailwind CSS` with CSS Variables for Dark/Light theme switching
+- **State Management**: React Hooks + Custom APIs for WebSockets (`/ws/dashboard/` & `/ws/camera/`)
+- **Localization**: Custom lightweight `i18n` with automatic document direction formatting.
+
+---
+
+## 📂 Repository Structure
+
+```text
+├── backend/                  # FastAPI app (app/), requirements, local runner
+├── frontend/                 # React + Vite SPA
+├── database/                 # SQL Server schema + stored procedures
+├── docker/                   # Dockerfiles (backend-base, backend-gpu)
+├── nginx/                    # nginx.conf (prod), local.conf (local dev)
+├── scripts/                  # Utilities (e.g., ONNX model generator)
+├── docker-compose.yml        # Production stack (GPU backend + SQL + nginx + certbot)
+├── docker-compose.local.yml  # Local dev overrides (CPU backend, no SSL)
+├── deploy.sh                 # Sync + build + start on a VPS using Docker
+└── ssl-init.sh               # One-time Let's Encrypt cert setup
+```
+
+---
+
+## 🚀 Local Development
+
+### Prerequisites
+- Node.js & npm (v18+)
+- Python 3.11
+- SQL Server (Local or Docker)
+
+### 1. Database Setup
 ```bash
-# 1. Backend
+sqlcmd -S localhost,1433 -U sa -P <your-password> -i database/01_init_schema.sql
+```
+
+### 2. Backend & API
+```bash
 cd backend
 python -m venv .venv311
-source .venv311/bin/activate        # Windows: .venv311\Scripts\activate
+source .venv311/bin/activate        # On Windows: .venv311\Scripts\activate
 pip install -r requirements.txt
-cp .env.example .env                 # edit values
-./run_backend_311.sh                 # starts uvicorn on :8000
+cp .env.example .env                # Edit the DB/SMTP variables inside
+./run_backend_311.sh                # Starts uvicorn gracefully on port 8000
+```
 
-# 2. Frontend (new shell)
+### 3. Frontend Application
+```bash
 cd frontend
 npm install
-npm run dev                          # http://localhost:5173
-
-# 3. Database
-sqlcmd -S localhost,1433 -U sa -P <password> -i database/01_init_schema.sql
+npm run dev                         # Serves app on http://localhost:5173
 ```
 
-### One-time: anti-spoofing CNN weights
-
-```bash
-pip install "torch==2.1.*" --index-url https://download.pytorch.org/whl/cpu
-python scripts/convert_pad_models.py
-```
-Generates the two MiniFASNet ONNX files under `backend/app/models/pad/`.
-Skipping this disables spoof protection but attendance still works.
-
-### Local Docker stack
-
-```bash
-docker compose -f docker-compose.yml -f docker-compose.local.yml up -d --build
-```
+*(Alternatively, for local Docker deployment, run: `docker compose -f docker-compose.yml -f docker-compose.local.yml up -d --build`)*
 
 ---
 
-## Production deploy (DigitalOcean GPU droplet)
+## 🔐 Production Deployment (VPS)
 
-One-time server prep:
+Attendify is tailored for deployment on isolated GPU droplets (e.g., DigitalOcean RTX 6000 Ada).
+
+### 1. VPS Host Prep (Run Once)
+Install standard Docker utilities & the NVIDIA Container Toolkit on your VPS.
+
 ```bash
 apt-get install -y docker.io docker-compose-plugin
-# NVIDIA container toolkit — see deploy.sh header for full commands
+# See deploy.sh header for detailed nvidia-toolkit commands
 ```
 
-Every deploy:
+### 2. Push & Deploy via Script
+The `deploy.sh` script automates `rsync` file transfers and restarts the remote `docker compose` instance.
+
 ```bash
 ./deploy.sh <droplet-ip>
 ```
-`deploy.sh` rsyncs the repo to `/opt/attendify`, ships the prebuilt backend
-image over SSH, and runs `docker compose up -d --build`. Required on the
-server: `/opt/attendify/.env` with `JWT_SECRET_KEY`, `MSSQL_SA_PASSWORD`,
-SMTP credentials.
+*Note: Make sure to manually populate `/opt/attendify/.env` on the VPS with your secrets (`JWT_SECRET_KEY`, `MSSQL_SA_PASSWORD`, `SMTP_PASSWORD`) before deploying!*
 
-First deploy also needs SSL certs:
+### 3. SSL Generation
 ```bash
 ssh root@<ip> "cd /opt/attendify && bash ssl-init.sh you@example.com"
 ```
 
-The production stack serves:
-- `https://attendify.tech`         — frontend
-- `https://api.attendify.tech`     — backend API + WebSockets
-- `https://api.attendify.tech/docs` — OpenAPI docs
-
----
-
-## Key endpoints
-
-| Method | Path | Purpose |
-|--------|------|---------|
-| POST | `/api/auth/login` | Professor login (JWT) |
-| POST | `/api/sessions/start` | Start an attendance session |
-| WS   | `/ws/camera/{session_id}` | Binary JPEG frame ingestion |
-| WS   | `/ws/dashboard/{session_id}` | Real-time overlays + events |
-| POST | `/api/sessions/{id}/finalize-send-emails` | Close session + email absentees |
-| GET  | `/api/courses/{id}/gradebook` | Fetch course grades |
-
-Full list in [backend/app/main.py](backend/app/main.py) or the Swagger UI at
-`/docs`.
+The production services will then bind to your DNS records:
+- **Application**: [https://attendify.tech](https://attendify.tech)
+- **API Backend**: [https://api.attendify.tech](https://api.attendify.tech)
+- **Interactive Swagger Docs**: [https://api.attendify.tech/docs](https://api.attendify.tech/docs)
