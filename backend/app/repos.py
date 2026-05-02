@@ -108,6 +108,65 @@ class Repository:
             conn.commit()
 
     @staticmethod
+    def get_student_portal_data(student_id: int) -> Dict[str, Any]:
+        student = fetch_one(
+            """
+            SELECT StudentID, FullName, FullNameKurdish,
+                   FaceDeletedBySelf, FaceDeletedAt
+            FROM dbo.Students WHERE StudentID = ?;
+            """,
+            (student_id,),
+        )
+        courses = fetch_all(
+            """
+            SELECT c.CourseName, e.HoursAbsentTotal
+            FROM dbo.Enrollments e
+            JOIN dbo.Courses c ON c.CourseID = e.CourseID
+            WHERE e.StudentID = ?;
+            """,
+            (student_id,),
+        )
+        face_row = fetch_one(
+            "SELECT COUNT(*) AS cnt FROM dbo.StudentFaceEmbeddings WHERE StudentID = ?;",
+            (student_id,),
+        )
+        deleted_at = student["FaceDeletedAt"]
+        return {
+            "full_name": student["FullName"],
+            "full_name_kurdish": student["FullNameKurdish"],
+            "courses": [
+                {
+                    "course_name": row["CourseName"],
+                    "hours_absent": float(row["HoursAbsentTotal"]),
+                }
+                for row in courses
+            ],
+            "face_enrolled": (face_row["cnt"] > 0),
+            "face_deleted_by_self": bool(student["FaceDeletedBySelf"]),
+            "face_deleted_at": deleted_at.isoformat() if deleted_at else None,
+        }
+
+    @staticmethod
+    def delete_student_face(student_id: int) -> None:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "DELETE FROM dbo.StudentFaceEmbeddings WHERE StudentID = ?;",
+                (student_id,),
+            )
+            cursor.execute(
+                """
+                UPDATE dbo.Students
+                SET FaceDeletedBySelf = 1,
+                    FaceDeletedAt     = SYSUTCDATETIME(),
+                    EnrollmentStatus  = N'pending'
+                WHERE StudentID = ?;
+                """,
+                (student_id,),
+            )
+            conn.commit()
+
+    @staticmethod
     def update_professor_profile(
         professor_id: int,
         course_id: int,
