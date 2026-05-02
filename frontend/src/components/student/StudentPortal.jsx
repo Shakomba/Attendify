@@ -25,11 +25,21 @@ export function StudentPortal({ apiBase, student, onLogout, theme, toggleTheme, 
   }
 
   useEffect(() => {
-    apiFetch('/api/student/portal')
+    const currentToken = localStorage.getItem('ams_token')
+    fetch(`${apiBase}/api/student/portal`, {
+      headers: { Authorization: `Bearer ${currentToken}`, 'Content-Type': 'application/json' },
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}))
+          throw new Error(body.detail || res.statusText)
+        }
+        return res.json()
+      })
       .then(setPortal)
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
-  }, [])
+  }, [apiBase])
 
   const handleDeleteFace = async () => {
     setDeleting(true)
@@ -105,8 +115,8 @@ export function StudentPortal({ apiBase, student, onLogout, theme, toggleTheme, 
             {portal?.courses?.length === 0 && (
               <p className="text-sm text-secondary text-center py-8">—</p>
             )}
-            {portal?.courses?.map((course) => (
-              <div key={course.course_name} className="standard-card flex items-center justify-between px-4 py-3.5">
+            {portal?.courses?.map((course, idx) => (
+              <div key={idx} className="standard-card flex items-center justify-between px-4 py-3.5">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-fg/10 flex items-center justify-center">
                     <BookOpen size={15} className="text-fg" />
