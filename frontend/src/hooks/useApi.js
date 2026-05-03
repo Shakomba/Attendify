@@ -25,18 +25,18 @@ export function useApi() {
 
     const apiFetch = useCallback(
         async (path, options = {}) => {
-            const { _raw, ...fetchOptions } = options
+            const { _raw, headers: extraHeaders, ...fetchOptions } = options
             const token = localStorage.getItem('ams_token') || ''
             const authHeader = token ? { 'Authorization': `Bearer ${token}` } : {}
             // Don't set Content-Type for FormData — let the browser add the boundary
             const contentType = fetchOptions.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }
             const response = await fetch(`${normalizeApiBase(apiBase)}${path}`, {
+                ...fetchOptions,
                 headers: {
                     ...contentType,
                     ...authHeader,
-                    ...(fetchOptions.headers || {}),
+                    ...(extraHeaders || {}),
                 },
-                ...fetchOptions,
             })
             if (_raw) {
                 if (!response.ok) {
