@@ -90,6 +90,7 @@ services:
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       RESEND_API_URL: ${RESEND_API_URL:-https://api.resend.com/emails}
       RESEND_TIMEOUT_SEC: ${RESEND_TIMEOUT_SEC:-15}
+      FRONTEND_URL: ${FRONTEND_URL:-https://attendify.tech}
     volumes:
       - insightface_models:/root/.insightface
     healthcheck:
