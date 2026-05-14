@@ -1,5 +1,5 @@
 import { cn } from '../../lib/utils'
-import { LayoutDashboard, BookOpen, Mail, UserCheck, ScanFace, LogOut, History, Settings, ShieldCheck } from 'lucide-react'
+import { LayoutDashboard, BookOpen, Mail, UserCheck, ScanFace, LogOut, History, Settings } from 'lucide-react'
 import { useTranslation } from '../../lib/i18n'
 import { tName } from '../../lib/nameTranslation';
 
@@ -12,7 +12,6 @@ const NAV_TABS = [
 ]
 
 export function DashboardLayout({ children, activeTab, setActiveTab, professor, onLogout, headerAction, navigationLocked = false }) {
-    const isAdmin = Boolean(professor?.is_admin);
     const { t, language } = useTranslation()
     return (
         <div className="flex min-h-screen bg-bg text-fg font-sans">
@@ -44,22 +43,6 @@ export function DashboardLayout({ children, activeTab, setActiveTab, professor, 
                     ))}
 
                     <div className="mt-auto pt-4 border-t border-border space-y-1">
-                        {isAdmin && (
-                            <button
-                                disabled={navigationLocked}
-                                onClick={() => setActiveTab('admin')}
-                                className={cn(
-                                    'flex items-center gap-3 px-3 py-2 rounded-sm font-medium transition-colors duration-150 w-full text-start',
-                                    navigationLocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
-                                    activeTab === 'admin'
-                                        ? 'bg-fg text-bg'
-                                        : 'text-secondary hover:bg-surface hover:text-fg'
-                                )}
-                            >
-                                <ShieldCheck size={18} />
-                                <span className="text-sm">{t('tab_admin')}</span>
-                            </button>
-                        )}
                         <button
                             disabled={navigationLocked}
                             onClick={() => setActiveTab('settings')}

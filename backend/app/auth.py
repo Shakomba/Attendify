@@ -7,10 +7,9 @@ import jwt
 from fastapi import Header, HTTPException, status
 
 from .config import settings
-from .database import set_professor_context
 
 
-def create_access_token(professor_id: int, username: str, course_id: int, is_admin: bool = False) -> str:
+def create_access_token(professor_id: int, username: str, course_id: int) -> str:
     expire = datetime.now(timezone.utc) + timedelta(
         minutes=settings.jwt_access_token_expire_minutes
     )
@@ -19,7 +18,6 @@ def create_access_token(professor_id: int, username: str, course_id: int, is_adm
         "role": "professor",
         "username": username,
         "course_id": course_id,
-        "is_admin": is_admin,
         "exp": expire,
     }
     return jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
@@ -78,18 +76,6 @@ def get_current_professor(authorization: str = Header(default="")) -> Dict:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Professor access only.",
-        )
-    set_professor_context(int(payload["sub"]))
-    return payload
-
-
-def get_current_admin(authorization: str = Header(default="")) -> Dict:
-    """FastAPI dependency — validates Bearer token, asserts professor role + is_admin flag."""
-    payload = get_current_professor(authorization)
-    if not payload.get("is_admin"):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin access only.",
         )
     return payload
 

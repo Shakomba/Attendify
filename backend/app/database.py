@@ -1,5 +1,4 @@
 from contextlib import contextmanager
-from contextvars import ContextVar
 from typing import Any, Dict, Iterable, List, Optional, Sequence
 
 try:
@@ -8,14 +7,6 @@ except Exception:  # pragma: no cover
     pyodbc = None
 
 from .config import settings
-
-# Stores the professor ID for the current async task. Set by get_current_professor()
-# so every connection opened during a professor-authenticated request carries it.
-_professor_ctx: ContextVar[Optional[int]] = ContextVar("professor_id", default=None)
-
-
-def set_professor_context(professor_id: int) -> None:
-    _professor_ctx.set(professor_id)
 
 
 def build_connection_string() -> str:
@@ -47,11 +38,6 @@ def get_connection(autocommit: bool = False):
         )
     conn = pyodbc.connect(build_connection_string(), autocommit=autocommit)
     try:
-        professor_id = _professor_ctx.get()
-        if professor_id is not None:
-            cur = conn.cursor()
-            cur.execute("EXEC sys.sp_set_session_context N'professor_id', ?;", (professor_id,))
-            cur.close()
         yield conn
     finally:
         conn.close()

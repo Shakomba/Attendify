@@ -20,7 +20,6 @@ import { SessionHistory } from "./components/dashboard/SessionHistory";
 import { EnrollmentModal } from "./components/enrollment/EnrollmentModal";
 import { EnrollmentTab } from "./components/enrollment/EnrollmentTab";
 import { SettingsTab } from "./components/settings/SettingsTab";
-import { AdminPage } from "./components/admin/AdminPage";
 import { I18nProvider } from "./lib/i18n";
 import { translations } from "./lib/translations";
 import { parseDateSafe } from "./lib/dateFormatter";
@@ -812,10 +811,6 @@ export default function App() {
           <div className="mt-2">
             <SessionHistory apiFetch={apiFetch} courseId={courseId} activeSessionId={sessionId} />
           </div>
-        </div>
-      ) : activeTab === 'admin' && professor?.is_admin ? (
-        <div className="animate-fade-in">
-          <AdminPage apiFetch={apiFetch} />
         </div>
       ) : activeTab === 'settings' ? (
         <SettingsTab

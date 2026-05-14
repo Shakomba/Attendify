@@ -18,7 +18,7 @@ class Repository:
         row = fetch_one(
             """
             SELECT p.ProfessorID, p.Username, p.FullName, p.CourseID,
-                   p.PasswordHash, p.IsAdmin, c.CourseName, c.CourseCode
+                   p.PasswordHash, c.CourseName, c.CourseCode
             FROM dbo.Professors p
             INNER JOIN dbo.Courses c ON c.CourseID = p.CourseID
             WHERE p.Username = ? AND p.IsActive = 1;
@@ -40,7 +40,6 @@ class Repository:
             "course_id": row["CourseID"],
             "course_name": row["CourseName"],
             "course_code": row["CourseCode"],
-            "is_admin": bool(row["IsAdmin"]),
         }
 
     @staticmethod
@@ -216,7 +215,6 @@ class Repository:
             "course_id": row["CourseID"],
             "course_name": row["CourseName"],
             "course_code": row["CourseCode"],
-            "is_admin": bool(row.get("IsAdmin", False)),
         }
 
     @staticmethod
@@ -992,75 +990,6 @@ class Repository:
                 cursor.execute("DELETE FROM dbo.ClassSessions WHERE SessionID = ?;", (sid,))
             conn.commit()
 
-    # ── Admin ─────────────────────────────────────────────────────────────────
-
-    @staticmethod
-    def list_all_professors() -> List[Dict[str, Any]]:
-        return fetch_all(
-            """
-            SELECT p.ProfessorID, p.Username, p.FullName, p.CourseID,
-                   p.IsAdmin, p.IsActive, p.CreatedAt,
-                   c.CourseName, c.CourseCode
-            FROM dbo.Professors p
-            JOIN dbo.Courses c ON c.CourseID = p.CourseID
-            ORDER BY p.ProfessorID;
-            """
-        )
-
-    @staticmethod
-    def create_professor(username: str, full_name: str, password_hash: str, course_id: int, is_admin: bool) -> Dict[str, Any]:
-        with get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute(
-                """
-                INSERT INTO dbo.Professors (Username, PasswordHash, FullName, CourseID, IsAdmin)
-                OUTPUT INSERTED.ProfessorID
-                VALUES (?, ?, ?, ?, ?);
-                """,
-                (username, password_hash, full_name, course_id, 1 if is_admin else 0),
-            )
-            row = cursor.fetchone()
-            conn.commit()
-        professor_id = row[0]
-        return fetch_one(
-            """
-            SELECT p.ProfessorID, p.Username, p.FullName, p.CourseID,
-                   p.IsAdmin, c.CourseName, c.CourseCode
-            FROM dbo.Professors p
-            JOIN dbo.Courses c ON c.CourseID = p.CourseID
-            WHERE p.ProfessorID = ?;
-            """,
-            (professor_id,),
-        )
-
-    @staticmethod
-    def get_activity_log(action: Optional[str] = None, limit: int = 100) -> List[Dict[str, Any]]:
-        if action:
-            rows = fetch_all(
-                """
-                SELECT TOP (?) LogID, ProfessorID, Username, ProfessorName,
-                       Action, TargetTable, TargetID, Detail, OccurredAt
-                FROM dbo.vw_ProfessorActivity
-                WHERE Action = ?
-                ORDER BY OccurredAt DESC;
-                """,
-                (limit, action),
-            )
-        else:
-            rows = fetch_all(
-                """
-                SELECT TOP (?) LogID, ProfessorID, Username, ProfessorName,
-                       Action, TargetTable, TargetID, Detail, OccurredAt
-                FROM dbo.vw_ProfessorActivity
-                ORDER BY OccurredAt DESC;
-                """,
-                (limit,),
-            )
-        for r in rows:
-            if hasattr(r.get("OccurredAt"), "isoformat"):
-                r["OccurredAt"] = r["OccurredAt"].isoformat()
-        return rows
-
     # ── WebAuthn credential storage ──────────────────────────────────────────
 
     @staticmethod
@@ -1097,7 +1026,7 @@ class Repository:
         return fetch_one(
             """
             SELECT p.ProfessorID, p.Username, p.FullName, p.CourseID,
-                   p.IsAdmin, c.CourseName, c.CourseCode
+                   c.CourseName, c.CourseCode
             FROM dbo.Professors p
             JOIN dbo.Courses c ON c.CourseID = p.CourseID
             WHERE p.ProfessorID = ? AND p.IsActive = 1;
