@@ -67,6 +67,7 @@ class LoginResponse(BaseModel):
     course_id: Optional[int] = None
     course_name: Optional[str] = None
     course_code: Optional[str] = None
+    is_admin: bool = False
     # Student-only fields
     student_id: Optional[int] = None
     full_name: Optional[str] = None
@@ -108,6 +109,14 @@ class EnrollmentStatusResponse(BaseModel):
 class SetPasswordRequest(BaseModel):
     password: str = Field(min_length=8, max_length=128)
     confirm_password: str = Field(min_length=8, max_length=128)
+
+
+class ProfessorCreateRequest(BaseModel):
+    username: str = Field(min_length=2, max_length=50)
+    full_name: str = Field(min_length=2, max_length=120)
+    password: str = Field(min_length=8, max_length=128)
+    course_id: int
+    is_admin: bool = False
 
 
 class StudentPortalCourse(BaseModel):

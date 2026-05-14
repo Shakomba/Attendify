@@ -22,6 +22,7 @@ from .auth import (
     create_access_token,
     create_student_token,
     decode_token,
+    get_current_admin,
     get_current_professor,
     get_current_student,
     get_current_student_invite,
@@ -40,6 +41,7 @@ from .schemas import (
     LoginRequest,
     LoginResponse,
     ManualAttendanceUpdateRequest,
+    ProfessorCreateRequest,
     SetPasswordRequest,
     StartSessionRequest,
     StartSessionResponse,
@@ -164,6 +166,7 @@ def login(request: Request, payload: LoginRequest):
             professor_id=result["professor_id"],
             username=result["username"],
             course_id=result["course_id"],
+            is_admin=result.get("is_admin", False),
         )
         return {
             **result,
@@ -341,6 +344,7 @@ def update_profile(payload: dict, professor: dict = Depends(get_current_professo
         professor_id=result["professor_id"],
         username=result["username"],
         course_id=result["course_id"],
+        is_admin=result.get("is_admin", False),
     )
     return LoginResponse(**result, access_token=token)
 
@@ -420,6 +424,7 @@ def webauthn_authenticate_complete(payload: dict) -> LoginResponse:
         professor_id=prof_row["ProfessorID"],
         username=prof_row["Username"],
         course_id=prof_row["CourseID"],
+        is_admin=bool(prof_row.get("IsAdmin", False)),
     )
     return LoginResponse(
         professor_id=prof_row["ProfessorID"],
@@ -428,6 +433,7 @@ def webauthn_authenticate_complete(payload: dict) -> LoginResponse:
         course_id=prof_row["CourseID"],
         course_name=prof_row.get("CourseName", ""),
         course_code=prof_row.get("CourseCode", ""),
+        is_admin=bool(prof_row.get("IsAdmin", False)),
         access_token=token,
     )
 
@@ -909,6 +915,60 @@ def send_bulk_email(
 
     result = email_service.send_bulk_emails(students, payload.email_type, payload.lang)
     return BulkEmailResponse(**result)
+
+
+# ---------------------------------------------------------------------------
+# Admin endpoints
+# ---------------------------------------------------------------------------
+@app.get("/api/admin/activity")
+def get_admin_activity(
+    action: Optional[str] = Query(default=None),
+    limit: int = Query(default=100, ge=1, le=1000),
+    _admin: dict = Depends(get_current_admin),
+) -> dict:
+    return {"items": repo.get_activity_log(action=action, limit=limit)}
+
+
+@app.get("/api/admin/professors")
+def list_professors(
+    _admin: dict = Depends(get_current_admin),
+) -> dict:
+    rows = repo.list_all_professors()
+    for r in rows:
+        if hasattr(r.get("CreatedAt"), "isoformat"):
+            r["CreatedAt"] = r["CreatedAt"].isoformat()
+        r["IsAdmin"] = bool(r.get("IsAdmin", False))
+        r["IsActive"] = bool(r.get("IsActive", True))
+    return {"items": rows}
+
+
+@app.post("/api/admin/professors", response_model=GenericMessage)
+def create_professor(
+    payload: ProfessorCreateRequest,
+    _admin: dict = Depends(get_current_admin),
+) -> GenericMessage:
+    existing = repo.get_professor_by_username(payload.username)
+    if existing:
+        raise HTTPException(status_code=409, detail="Username already taken.")
+    password_hash = _bcrypt.hashpw(payload.password.encode(), _bcrypt.gensalt()).decode()
+    row = repo.create_professor(
+        username=payload.username,
+        full_name=payload.full_name,
+        password_hash=password_hash,
+        course_id=payload.course_id,
+        is_admin=payload.is_admin,
+    )
+    return GenericMessage(
+        message="Professor created.",
+        data={
+            "professor_id": row["ProfessorID"],
+            "username": row["Username"],
+            "full_name": row["FullName"],
+            "course_id": row["CourseID"],
+            "course_name": row["CourseName"],
+            "is_admin": bool(row["IsAdmin"]),
+        },
+    )
 
 
 # ---------------------------------------------------------------------------
