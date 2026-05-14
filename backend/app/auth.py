@@ -7,6 +7,7 @@ import jwt
 from fastapi import Header, HTTPException, status
 
 from .config import settings
+from .database import set_professor_context
 
 
 def create_access_token(professor_id: int, username: str, course_id: int) -> str:
@@ -77,6 +78,7 @@ def get_current_professor(authorization: str = Header(default="")) -> Dict:
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Professor access only.",
         )
+    set_professor_context(int(payload["sub"]))
     return payload
 
 
